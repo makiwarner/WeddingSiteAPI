@@ -1,7 +1,17 @@
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Enable CORS for your WordPress site
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://samuelandmakenna.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Simulated in-memory database of guests
 guests = [
