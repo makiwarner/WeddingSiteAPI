@@ -23,6 +23,13 @@ app.add_middleware(
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    if db.query(Guest).count() == 0:
+        db.add(Guest(name="Bartow Family", number_of_invitees=4))
+        db.add(Guest(name="Warner Family", number_of_invitees=5))
+        db.commit()
+    db.close()
+
 
 # Dependency to get a database session
 def get_db():
