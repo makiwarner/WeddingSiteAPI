@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 # Import your DB setup and models
-from .database import Base, engine, SessionLocal, Guest
+from database import Base, engine, SessionLocal, Guest
 
 
 # Create FastAPI instance
