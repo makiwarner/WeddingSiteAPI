@@ -3,7 +3,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from sqlalchemy import Column, Integer, String
-from .database import Base
 
 
 # Get the database URL from an environment variable, or paste your Neon connection string directly
