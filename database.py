@@ -22,5 +22,7 @@ class Guest(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    members = Column(String, nullable=True, index=True)
     number_of_invitees = Column(Integer)
     status = Column(String, nullable=True)
+    confirmed_attendance = Column(Integer, nullable=True)

@@ -2,12 +2,11 @@ from fastapi import FastAPI, HTTPException, Query, Depends
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 # Import your DB setup and models
 from database import Base, engine, SessionLocal, Guest
 
-
-# Create FastAPI instance
 app = FastAPI()
 
 # Enable CORS
@@ -25,43 +24,42 @@ def startup():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     if db.query(Guest).count() == 0:
-        db.add(Guest(name="Bartow Family", number_of_invitees=4))
-        db.add(Guest(name="Warner Family", number_of_invitees=5))
+        db.add(Guest(name="Bartow Family", members="Jussely, Eben, Elijah, Amalia", number_of_invitees=4))
+        db.add(Guest(name="Warner Family", members="Kai, Jason, Annika, Savanna, Sophia", number_of_invitees=5))
         db.add(Guest(name="Grace", number_of_invitees=1))
         db.add(Guest(name="Karen", number_of_invitees=1))
         db.add(Guest(name="Elena", number_of_invitees=1))
         db.add(Guest(name="Karen", number_of_invitees=1))
         db.add(Guest(name="Elena", number_of_invitees=1))
         db.add(Guest(name="Karen", number_of_invitees=1))
-        db.add(Guest(name="Mack Family", number_of_invitees=3))
-        db.add(Guest(name="Greg and Peg", number_of_invitees=2))
-        db.add(Guest(name="Mckeithan Family", number_of_invitees=3))
-        db.add(Guest(name="Jeddie", number_of_invitees=1))
-        db.add(Guest(name="Smith Family", number_of_invitees=4))
-        db.add(Guest(name="Farrell Family", number_of_invitees=3))
-        db.add(Guest(name="Valeria", number_of_invitees=3))
-        db.add(Guest(name="Hannah", number_of_invitees=2))
+        db.add(Guest(name="Mack Family", members="Ryhs, Naomi, Troy", number_of_invitees=3))
+        db.add(Guest(name="Underwood Family", members="Jeddie, Greg, Peg", number_of_invitees=2))
+        db.add(Guest(name="Mckeithan Family", members="Julie, Peyton, Megan", number_of_invitees=3))
+        db.add(Guest(name="Smith Family", members="Sarah, Jason, Nico, Luca", number_of_invitees=4))
+        db.add(Guest(name="Farrell Family", members="Olivia, Brian, Theo", number_of_invitees=3))
+        db.add(Guest(name="Valeria", members="Valeria, Tere, Erick", number_of_invitees=3))
+        db.add(Guest(name="Hannah", members="Jesus, Hannah", number_of_invitees=2))
         db.add(Guest(name="Elena", number_of_invitees=1))
-        db.add(Guest(name="Lornezinis Family", number_of_invitees=5))
+        db.add(Guest(name="Lornezini Family", members="Kylie, Kenna, Nate, Aubrey, Conner, Caleb", number_of_invitees=6))
         db.add(Guest(name="Aya", number_of_invitees=1))
         db.add(Guest(name="India", number_of_invitees=1))
-        db.add(Guest(name="Krywe Family", number_of_invitees=3))
-        db.add(Guest(name="Dejong Family", number_of_invitees=6))
+        db.add(Guest(name="Sofia", number_of_invitees=1))
+        db.add(Guest(name="Krywe Family", members="April, Diane, Tom", number_of_invitees=3))
+        db.add(Guest(name="Dejong Family", members="Mike, Christina, Lauren, Austen, Jacob, Evan", number_of_invitees=6))
         db.add(Guest(name="Nicole", number_of_invitees=1))
         db.add(Guest(name="David", number_of_invitees=3))
-        # If a guest has no explicit number in parentheses, assume 1 invitee:
         db.add(Guest(name="Andreu", number_of_invitees=1))
-        db.add(Guest(name="Johnson Family", number_of_invitees=3))
+        db.add(Guest(name="Johnson Family", members="Max, Liz, Glenn", number_of_invitees=3))
         db.add(Guest(name="Grandpa Warner", number_of_invitees=1))
-        db.add(Guest(name="Athey Family", number_of_invitees=4))
+        db.add(Guest(name="Athey Family", members="Lynn, Shane, Malia, Emiko", number_of_invitees=4))
         db.add(Guest(name="Pop and Butter", number_of_invitees=2))
-        db.add(Guest(name="Abuellie", number_of_invitees=1))
-        db.add(Guest(name="Zach and Ellise", number_of_invitees=2))
-        db.add(Guest(name="Oscar and Lily", number_of_invitees=2))
+        db.add(Guest(name="Abuellie", members="Ellen", number_of_invitees=1))
+        db.add(Guest(name="Zach and Elise", members="Zach, Elise", number_of_invitees=2))
+        db.add(Guest(name="Oscar and Lily", members="Oscar, Lily", number_of_invitees=2))
         db.add(Guest(name="Deneyi", number_of_invitees=3))
         db.add(Guest(name="Dayanna", number_of_invitees=2))
-        db.add(Guest(name="Pepe and Jackie", number_of_invitees=2))
-        db.add(Guest(name="Irma and Clemente", number_of_invitees=2))
+        db.add(Guest(name="Pepe and Jackie", members="Pepe, Jackie", number_of_invitees=2))
+        db.add(Guest(name="Irma and Clemente", members="Irma, Clemente", number_of_invitees=2))
         
         db.commit()
     db.close()
@@ -75,18 +73,23 @@ def get_db():
     finally:
         db.close()
 
-# Pydantic model for RSVP status
+# Pydantic model for RSVP status (field name updated for consistency)
 class RSVPResponse(BaseModel):
     status: str  # e.g. "joyfully accepts" or "regrettfully declines"
+    confirmed_attendance: int  # number of people confirmed 
 
-# GET endpoint to search for guests by name
+# GET endpoint to search for guests by name and members
 @app.get("/rsvp")
 def search_guest(
     name: str = Query(..., description="Name to search for in the guest list"),
     db: Session = Depends(get_db)
 ):
-    # Case-insensitive search using ilike (PostgreSQL)
-    results = db.query(Guest).filter(Guest.name.ilike(f"%{name}%")).all()
+    results = db.query(Guest).filter(
+        or_(
+            Guest.name.ilike(f"%{name}%"),
+            Guest.members.ilike(f"%{name}%")
+        )
+    ).all()
     if not results:
         raise HTTPException(status_code=404, detail="Guest not found")
     return results
@@ -103,6 +106,7 @@ def update_rsvp(
         raise HTTPException(status_code=404, detail="Guest not found")
 
     guest.status = response.status
+    guest.confirmed_attendance = response.confirmed_attendance
     db.commit()
     db.refresh(guest)
 
